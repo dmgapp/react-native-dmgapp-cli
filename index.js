@@ -96,9 +96,6 @@ function createProject( name ) {
       process.exit( 1 );
     } else {
       projectRename.init( root , projectName );
-
-      run();
-
     }
   } );
 

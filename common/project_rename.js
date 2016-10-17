@@ -24,18 +24,20 @@ var ProjectRename = {
     this.config.projectName = projectName;
     this.config.projectNameLower = projectName.toLowerCase();
 
+    //this.test();
+
     this.scanFileAndDirectory( dir );
-
-    //console.log( 'this.config.needChangeNameDirUpper' , this.config.needChangeNameDirUpper );
-    //console.log( 'this.config.needChangeNameDirLower' , this.config.needChangeNameDirLower );
-    //console.log( 'this.config.needChangeNameFileUpper' , this.config.needChangeNameFileUpper );
-    //console.log( 'needChangeNameFileLower' , needChangeNameFileLower );
-
     this.replaceContent();
     this.renameFile();
     this.renameFolder();
     this.runNpmInstall();
 
+    //
+    //console.log( 'this.config.fileContentReplaceArr' , this.config.fileContentReplaceArr );
+    //console.log( 'this.config.needChangeNameDirUpper' , this.config.needChangeNameDirUpper );
+    //console.log( 'this.config.needChangeNameDirLower' , this.config.needChangeNameDirLower );
+    //console.log( 'this.config.needChangeNameFileUpper' , this.config.needChangeNameFileUpper );
+    //console.log( 'this.config.needChangeNameFileLower' , this.config.needChangeNameFileLower );
 
   } ,
 
@@ -138,7 +140,7 @@ var ProjectRename = {
   },
   runNpmInstall:function () {
     process.chdir(this.config.baseRoot);
-    exec( 'npm install ', function ( e , stdout , stderr ) {
+    exec( 'rm -rf .git && npm install ', function ( e , stdout , stderr ) {
       if ( e ) {
         console.log( stdout );
         console.error( stderr );
@@ -148,6 +150,22 @@ var ProjectRename = {
         console.log(' npm install has successful!');
       }
     } );
+  },
+
+  test:function () {
+    var filename =this.config.baseRoot+'/package.json';
+    var content  = fs.readFileSync(filename,'utf-8');
+    var p1 =  new RegExp( this.config.searchUpper , 'gm');
+    var p2 =  new RegExp( this.config.searchLower , "gm" );
+
+    console.log( content , this.config.searchUpper , this.config.searchLower );
+    if ( p1.test( content ) ) {
+      console.log('find' , this.config.searchUpper );
+    }
+
+    if ( p2.test( content ) ) {
+      console.log('find' , this.config.searchLower );
+    }
   }
 };
 

@@ -11,8 +11,9 @@ var path          = require( 'path' );
 var exec          = require( 'child_process' ).exec;
 var help          = require( "./common/help.js" );
 var projectRename = require( "./common/project_rename" );
-
-var argv = require( 'minimist' )( process.argv.slice( 2 ) );
+var argv          = require( 'minimist' )( process.argv.slice( 2 ) );
+var debug         = true;
+var kitPath       = 'https://github.com/dmgapp/react-native-dmgapp-kit.git';
 
 if ( argv[ 'h' ] ) {
   help();
@@ -49,9 +50,7 @@ switch ( commands[ 0 ] ) {
 
 function init( name , verbose , rnPackage ) {
   validatePackageName( name );
-
-  if ( fs.existsSync( name ) ) {
-    //createAfterConfirmation( name , verbose , rnPackage );
+  if ( fs.existsSync( name )) {
     console.log( 'Project Name has Exists!' );
     process.exit();
   } else {
@@ -85,14 +84,12 @@ function validatePackageName( name ) {
 function createProject( name ) {
   var root        = path.resolve( name );
   var projectName = path.basename( root );
-  //console.log( '888888888' , '' + root );
-  //console.log( 'projectName' , '' + projectName );
 
-  exec( 'git clone https://github.com/dmgapp/react-native-dmgapp-kit.git ' + root , function ( e , stdout , stderr ) {
+  exec( 'git clone ' + kitPath + root , function ( e , stdout , stderr ) {
     if ( e ) {
       console.log( stdout );
       console.error( stderr );
-      console.error( 'git clonse failed' );
+      console.error( 'git clone failed' );
       process.exit( 1 );
     } else {
       projectRename.init( root , projectName );

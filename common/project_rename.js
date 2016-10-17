@@ -144,6 +144,8 @@ var ProjectRename = {
         console.error( stderr );
         console.error(' npm install failed ');
         process.exit( 1 );
+      }else{
+        console.log(' npm install has successful!');
       }
     } );
   }

@@ -92,7 +92,7 @@ function createProject( name ) {
       console.error( 'git clone failed' );
       process.exit( 1 );
     } else {
-      installPackge();
+      installPackge( root, projectName );
     }
   } );
 }

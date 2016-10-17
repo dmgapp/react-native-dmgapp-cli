@@ -85,7 +85,7 @@ function createProject( name ) {
   var root = path.resolve( name );
   var projectName = path.basename( root );
 
-  exec( 'git clone ' + kitPath + root, function ( e, stdout, stderr ) {
+  exec( 'git clone ' + kitPath + ' ' + root, function ( e, stdout, stderr ) {
     if ( e ) {
       console.log( stdout );
       console.error( stderr );

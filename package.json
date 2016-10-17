@@ -14,6 +14,9 @@
 		"type": "git",
 		"url": "https://github.com/dmgapp/react-native-dmgapp-cli.git"
 	},
+	"bin": {
+		"dmgapp": "index.js"
+	},
 	"keywords": [
 		"dmgapp",
 		"build",

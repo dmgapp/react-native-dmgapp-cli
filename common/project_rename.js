@@ -12,6 +12,7 @@ var filesForTest = [];
 var ProjectRename = {
   config : {
     bar : null ,
+    npmBar : null ,
     progress : 0 ,
     baseRoot : '' ,
     projectName : '' ,
@@ -31,12 +32,6 @@ var ProjectRename = {
     this.config.projectName      = projectName;
     this.config.projectNameLower = projectName.toLowerCase();
 
-    //console.log('开始执行安装程序!');
-    //console.log(chalk.red('开始执行安装程序!'));
-    //log.addLevel('silly', -Infinity, { inverse: true }, 'sill');
-    //log.enableColor();
-    //log.enableUnicode();
-
     this.config.bar = new ProgressBar( '开始执行安装程序 [:bar] :percent :elapseds' , {
       complete : '=' ,
       incomplete : ' ' ,
@@ -51,8 +46,7 @@ var ProjectRename = {
     this.renameFile();
     this.renameFolder();
     this.updatePackageJson();
-    //this.config.bar.update(0.7);
-    //this.config.bar.update(1);
+    this.runNpmInstall();
     //console.log( ' \n progress:' , this.config.progress );
     //console.log( chalk.red( '执行安装程序完毕!' ) );
 
@@ -153,11 +147,12 @@ var ProjectRename = {
       var newData2 = this.config.needChangeNameDirUpper[ j ].replace( new RegExp( this.config.searchUpper , "gm" ) , this.config.projectName );
       fs.renameSync( this.config.needChangeNameDirUpper[ j ] , newData2 );
     }
-    this.config.bar.update( 1 );
+
   } ,
   runNpmInstall : function () {
+    var self = this;
     process.chdir( this.config.baseRoot );
-    console.log( '开始安装npm install,请耐心等待.....' );
+    console.log( '\n 开始安装npm install,请耐心等待.....' );
     exec( 'rm -rf .git && npm install ' , function ( e , stdout , stderr ) {
       if ( e ) {
         console.log( stdout );
@@ -165,7 +160,9 @@ var ProjectRename = {
         console.error( 'npm安装失败!' );
         process.exit( 1 );
       } else {
-        console.log( 'npm成功安装!' );
+        console.log( chalk.yellow( stdout ) );
+        console.log( '\n npm成功安装!' );
+        self.tips();
       }
     } );
   } ,
@@ -203,6 +200,7 @@ var ProjectRename = {
     };
     //console.log('打印packageJson:',packageJson);
     fs.writeFileSync( path.join( this.config.baseRoot , '/package.json' ) , JSON.stringify( packageJson ) );
+    this.config.bar.update( 1 );
   } ,
 
   test : function () {
@@ -223,7 +221,18 @@ var ProjectRename = {
   addProgress : function ( step ) {
     this.config.progress += step;
     this.config.bar.tick( step );
-
+  } ,
+  tips : function () {
+    console.log( '\n 在IOS上运行你的应用程序: ' );
+    console.log( '  cd ' + this.config.baseRoot );
+    console.log( '  react-native run-ios' );
+    console.log( '  - or -' );
+    console.log( '  Open ' + this.config.baseRoot + '/ios/' + this.config.projectName + '.xcodeproj in Xcode' );
+    console.log( '  点击运行按钮' );
+    console.log( '在安卓上运行你的应用程序:' );
+    console.log( '  有一个安卓模拟器运行（最快的方式开始），或一个设备连接' );
+    console.log( '  cd ' + this.config.baseRoot );
+    console.log( '  react-native run-android' );
   }
 };
 

@@ -138,7 +138,7 @@ ProgressBar.prototype.render = function (tokens) {
   /* fill in the actual progress bar */
   str = str.replace(':bar', complete + incomplete);
 
-  console.log('  elapsed',elapsed);
+  //console.log('  elapsed',elapsed);
 
   /* replace the extra tokens */
   if (tokens) for (var key in tokens) str = str.replace(':' + key, tokens[key]);

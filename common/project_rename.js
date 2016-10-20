@@ -4,8 +4,10 @@ var fs          = require( "fs" );
 var path        = require( "path" );
 var chalk       = require( 'chalk' );
 var exec        = require( 'child_process' ).exec;
-//var ProgressBar = require( 'progress' );
-var ProgressBar          = require( "./progress.js" );
+var ProgressBar = require( 'progress' );
+//var ProgressBar = require( "./progress.js" );
+
+var filesForTest = [];
 
 var ProjectRename = {
   config : {
@@ -35,62 +37,43 @@ var ProjectRename = {
     //log.enableColor();
     //log.enableUnicode();
 
-    this.config.bar = new ProgressBar( '开始执行安装程序 [:bar] :percent :etas' , {
+    this.config.bar = new ProgressBar( '开始执行安装程序 [:bar] :percent :elapseds' , {
       complete : '=' ,
       incomplete : ' ' ,
       width : 40 ,
       total : 100
     } );
 
-
-    this.config.bar.tick( 1 );
-    this.config.progress += 1;
-
     this.scanFileAndDirectory( dir );
+
+    //console.log( '文件个数' , filesForTest.length );
     this.replaceContent();
-
-    this.config.bar.tick( 10 );
-    this.addProgress(10);
-
     this.renameFile();
-    this.config.bar.tick( 10 );
-    this.addProgress(10);
-
     this.renameFolder();
-    this.config.bar.tick( 17 );
-    this.addProgress(17);
-
     this.updatePackageJson();
-    this.config.bar.tick( 100 - this.config.progress );
-    console.log(' \n progress:',this.config.progress);
-    console.log( chalk.red( '执行安装程序完毕!' ) );
-
-
+    //this.config.bar.update(0.7);
+    //this.config.bar.update(1);
+    //console.log( ' \n progress:' , this.config.progress );
+    //console.log( chalk.red( '执行安装程序完毕!' ) );
 
     //this.runNpmInstall();
     //console.log(chalk.red('执行安装程序完毕!'));
     //log.info('执行安装程序完毕!');
 
-    //console.log( 'this.config.fileContentReplaceArr' , this.config.fileContentReplaceArr );
-    //console.log( 'this.config.needChangeNameDirUpper' , this.config.needChangeNameDirUpper );
-    //console.log( 'this.config.needChangeNameDirLower' , this.config.needChangeNameDirLower );
-    //console.log( 'this.config.needChangeNameFileUpper' , this.config.needChangeNameFileUpper );
-    //console.log( 'this.config.needChangeNameFileLower' , this.config.needChangeNameFileLower );
-
   } ,
 
   scanFileAndDirectory : function ( dir ) {
-    this.config.bar.tick( 0.02);
-    this.config.progress += 0.02;
+
     //读取文件目录
     var files = fs.readdirSync( dir );
     for ( var index in files ) {
+      //this.addProgress( 0.1 );
       if ( !files.hasOwnProperty( index ) ) {
         continue;
       }
-
+      this.addProgress( 0.002 );
       var filename = files[ index ];
-
+      filesForTest.push( filename );
       var stat = fs.lstatSync( path.join( dir , filename ) );
       if ( stat.isDirectory() ) {
         this.fileOrDirNeedChangeName( dir , filename , false );
@@ -136,8 +119,7 @@ var ProjectRename = {
 
   replaceContent : function () {
     for ( var i = 0 ; i < this.config.fileContentReplaceArr.length ; i++ ) {
-      this.config.bar.tick( 0.01);
-      this.addProgress(0.01);
+      //this.addProgress( 0.01 );
       var data    = fs.readFileSync( this.config.fileContentReplaceArr[ i ] , "utf-8" );
       var newData = data.replace( new RegExp( this.config.searchUpper , "gm" ) , this.config.projectName )
                         .replace( new RegExp( this.config.searchLower , "gm" ) , this.config.projectNameLower );
@@ -145,6 +127,7 @@ var ProjectRename = {
       fs.writeFileSync( this.config.fileContentReplaceArr[ i ] , newData );
     }
 
+    this.config.bar.update( 0.9 );
   } ,
 
   renameFile : function () {
@@ -157,6 +140,7 @@ var ProjectRename = {
 
       fs.renameSync( this.config.needChangeNameFileUpper[ j ] , newData2 );
     }
+    this.config.bar.update( 0.95 );
   } ,
 
   renameFolder : function () {
@@ -169,6 +153,7 @@ var ProjectRename = {
       var newData2 = this.config.needChangeNameDirUpper[ j ].replace( new RegExp( this.config.searchUpper , "gm" ) , this.config.projectName );
       fs.renameSync( this.config.needChangeNameDirUpper[ j ] , newData2 );
     }
+    this.config.bar.update( 1 );
   } ,
   runNpmInstall : function () {
     process.chdir( this.config.baseRoot );
@@ -235,8 +220,10 @@ var ProjectRename = {
       console.log( 'find' , this.config.searchLower );
     }
   } ,
-  addProgress : function (step) {
-    this.config.progress+=step;
+  addProgress : function ( step ) {
+    this.config.progress += step;
+    this.config.bar.tick( step );
+
   }
 };
 

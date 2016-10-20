@@ -49,7 +49,7 @@ switch ( commands[ 0 ] ) {
     break;
 }
 
-function init( name, verbose, rnPackage ) {
+function init( name ) {
   validatePackageName( name );
   //createAfterConfirmation(name);
   if ( fs.existsSync( name ) ) {

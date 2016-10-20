@@ -9,11 +9,12 @@
 var fs = require( 'fs' );
 var path = require( 'path' );
 var exec = require( 'child_process' ).exec;
+var prompt = require('prompt');
 var help = require( "./common/help.js" );
 var projectRename = require( "./common/project_rename" );
 var argv = require( 'minimist' )( process.argv.slice( 2 ) );
 var debug = true;
-var kitPath = 'https://github.com/dmgapp/react-native-dmgapp-kit.git';
+var kitPath = 'https://github.com/dmgapp/react-native-dmgapp-kit.git ';
 
 if ( argv[ 'h' ] ) {
   help();
@@ -22,7 +23,7 @@ if ( argv[ 'h' ] ) {
 var commands = argv._;
 if ( commands.length === 0 ) {
   console.error(
-    'You did not pass any commands, did you mean to run `react-native init`?'
+    '你没有通过任何命令, 你是想运行 `react-native init`?'
   );
   process.exit( 1 );
 }
@@ -31,7 +32,7 @@ switch ( commands[ 0 ] ) {
   case 'init':
     if ( !commands[ 1 ] ) {
       console.error(
-        'Usage: react-native init <ProjectName> [--verbose]'
+        '用法：react-native init <项目名称>[--verbose]'
       );
       process.exit( 1 );
     } else {
@@ -40,8 +41,8 @@ switch ( commands[ 0 ] ) {
     break;
   default:
     console.error(
-      'Command `%s` unrecognized. ' +
-      'Did you mean to run this inside a react-native project?',
+      '无法识别的命令 `%s`. ' +
+      '你是想子本地运行这个react-native 工程吗?' ,
       commands[ 0 ]
     );
     process.exit( 1 );
@@ -50,19 +51,48 @@ switch ( commands[ 0 ] ) {
 
 function init( name, verbose, rnPackage ) {
   validatePackageName( name );
+  //createAfterConfirmation(name);
   if ( fs.existsSync( name ) ) {
-    console.log( 'Project Name has Exists!' );
-    process.exit();
+    if(debug){
+      var root        = path.resolve( name );
+      var projectName = path.basename( root );
+      projectRename.init( root , projectName );
+    }else{
+      console.log( '项目名称已存在!' );
+      process.exit();
+    }
   } else {
     createProject( name );
   }
 }
 
+function createAfterConfirmation(name) {
+  prompt.start();
+
+  var property = {
+    name: 'yesno',
+    message: '目录 ' + name + ' 已经存在. 是否继续?',
+    validator: /y[es]*|n[o]?/,
+    warning: '必须回答 yes or no',
+    default: 'no'
+  };
+
+  prompt.get(property, function (err, result) {
+    if (result.yesno[0] === 'y') {
+      createProject(name);
+    } else {
+      console.log('取消项目初始化!');
+      process.exit();
+    }
+  });
+}
+
+
 function validatePackageName( name ) {
   if ( !name.match( /^[$A-Z_][0-9A-Z_$]*$/i ) ) {
     console.error(
-      '"%s" is not a valid name for a project. Please use a valid identifier ' +
-      'name (alphanumeric).',
+      '"%s" 并不是一个项目的有效名称。请使用一个有效的标识符 ' +
+      '名称（字母）.' ,
       name
     );
     process.exit( 1 );
@@ -70,8 +100,8 @@ function validatePackageName( name ) {
 
   if ( name === 'React' ) {
     console.error(
-      '"%s" is not a valid name for a project. Please do not use the ' +
-      'reserved word "React".',
+      '"%s" 并不是一个项目的有效名称。请不要使用 ' +
+      '保留字 "React".' ,
       name
     );
     process.exit( 1 );
@@ -89,7 +119,7 @@ function createProject( name ) {
     if ( e ) {
       console.log( stdout );
       console.error( stderr );
-      console.error( 'git clone failed' );
+      console.error( 'git clone 获取失败！' );
       process.exit( 1 );
     } else {
       installPackge( root, projectName );

@@ -17,20 +17,22 @@ var ProjectRename = {
     baseRoot : '' ,
     projectName : '' ,
     projectNameLower : '' ,
-    searchUpper : "DMGAppKit" ,
+    searchUpper : "TestProjectIos" ,
     searchLower : "" ,
     fileContentReplaceArr : [] ,
     needChangeNameDirUpper : [] ,
     needChangeNameDirLower : [] ,
     needChangeNameFileUpper : [] ,
-    needChangeNameFileLower : []
+    needChangeNameFileLower : [] ,
+    needNpm : false
   } ,
 
-  init : function ( dir , projectName ) {
+  init : function ( dir , projectName , gitProjectName,needNpm ) {
     this.config.searchLower      = this.config.searchUpper.toLowerCase();
     this.config.baseRoot         = dir;
     this.config.projectName      = projectName;
     this.config.projectNameLower = projectName.toLowerCase();
+    this.config.needNpm          = needNpm;
 
     this.config.bar = new ProgressBar( '开始执行安装程序 [:bar] :percent :elapseds' , {
       complete : '=' ,
@@ -40,28 +42,20 @@ var ProjectRename = {
     } );
 
     this.scanFileAndDirectory( dir );
-
-    //console.log( '文件个数' , filesForTest.length );
     this.replaceContent();
     this.renameFile();
     this.renameFolder();
-    this.updatePackageJson();
-    this.runNpmInstall();
-    //console.log( ' \n progress:' , this.config.progress );
-    //console.log( chalk.red( '执行安装程序完毕!' ) );
 
-    //this.runNpmInstall();
-    //console.log(chalk.red('执行安装程序完毕!'));
-    //log.info('执行安装程序完毕!');
-
+    if ( this.config.needNpm ) {
+      this.updatePackageJson();
+      this.runNpmInstall();
+    }
   } ,
 
   scanFileAndDirectory : function ( dir ) {
-
     //读取文件目录
     var files = fs.readdirSync( dir );
     for ( var index in files ) {
-      //this.addProgress( 0.1 );
       if ( !files.hasOwnProperty( index ) ) {
         continue;
       }
@@ -76,7 +70,6 @@ var ProjectRename = {
         //判断 filename 是否是要替换的 文件或目录
         //如果是 则添加到要改名的 文件 arr
         this.fileOrDirNeedChangeName( dir , filename , true );
-
         //检查文件内容是否需要替换
         var filePath       = path.join( dir , filename );
         var fileContent    = fs.readFileSync( filePath , "utf-8" );
@@ -113,7 +106,6 @@ var ProjectRename = {
 
   replaceContent : function () {
     for ( var i = 0 ; i < this.config.fileContentReplaceArr.length ; i++ ) {
-      //this.addProgress( 0.01 );
       var data    = fs.readFileSync( this.config.fileContentReplaceArr[ i ] , "utf-8" );
       var newData = data.replace( new RegExp( this.config.searchUpper , "gm" ) , this.config.projectName )
                         .replace( new RegExp( this.config.searchLower , "gm" ) , this.config.projectNameLower );
@@ -147,21 +139,24 @@ var ProjectRename = {
       var newData2 = this.config.needChangeNameDirUpper[ j ].replace( new RegExp( this.config.searchUpper , "gm" ) , this.config.projectName );
       fs.renameSync( this.config.needChangeNameDirUpper[ j ] , newData2 );
     }
+    if ( !this.config.needNpm ){
+      this.config.bar.update( 1 );
+    }
 
   } ,
   runNpmInstall : function () {
     var self = this;
     process.chdir( this.config.baseRoot );
-    console.log( '\n 开始安装npm install,请耐心等待.....' );
+    console.log( '\n 执行npm install,请耐心等待.....' );
     exec( 'rm -rf .git && npm install ' , function ( e , stdout , stderr ) {
       if ( e ) {
         console.log( stdout );
         console.error( stderr );
-        console.error( 'npm安装失败!' );
+        console.error( 'npm执行失败!' );
         process.exit( 1 );
       } else {
         console.log( chalk.yellow( stdout ) );
-        console.log( '\n npm成功安装!' );
+        console.log( '\n npm执行成功!' );
         self.tips();
       }
     } );
@@ -200,7 +195,10 @@ var ProjectRename = {
     };
     //console.log('打印packageJson:',packageJson);
     fs.writeFileSync( path.join( this.config.baseRoot , '/package.json' ) , JSON.stringify( packageJson ) );
-    this.config.bar.update( 1 );
+    if(this.config.needNpm){
+      this.config.bar.update( 1 );
+    }
+
   } ,
 
   test : function () {

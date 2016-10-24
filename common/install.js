@@ -1,19 +1,41 @@
 'use strict';
 
-var fs          = require( "fs" );
-var path        = require( "path" );
-var chalk       = require( 'chalk' );
-var exec        = require( 'child_process' ).exec;
-var ProgressBar = require( 'progress' );
+var fs      = require( "fs" );
+var path    = require( "path" );
+var chalk   = require( 'chalk' );
+var exec    = require( 'child_process' ).exec;
 var loading = require( "./loading" );
 
-var filesForTest = [];
+var projectInfo = {
+  'rn-mall' : {
+    'projectName' : '' ,
+    'needNpm' : true ,
+    'uri' : ''
+  } ,
+  'rn-news' : {
+    'projectName' : 'DMGAppKit' ,
+    'needNpm' : true ,
+    'uri' : 'https://github.com/dmgapp/react-native-dmgapp-kit.git'
+  } ,
+  'ios-oc' : {
+    'projectName' : 'TestProjectIos' ,
+    'needNpm' : false ,
+    'uri' : 'https://git.coding.net/scot/TestProjectIos.git'
+  } ,
+  'ios-swift' : {
+    'projectName' : '' ,
+    'needNpm' : false ,
+    'uri' : ''
+  } ,
+  'android' : {
+    'projectName' : 'TestProjectAndroid' ,
+    'needNpm' : false ,
+    'uri' : 'https://git.coding.net/scot/TestProjectAndroid.git'
+  }
+};
 
-var ProjectRename = {
+var Install = {
   config : {
-    bar : null ,
-    npmBar : null ,
-    progress : 0 ,
     baseRoot : '' ,
     projectName : '' ,
     projectNameLower : '' ,
@@ -23,36 +45,54 @@ var ProjectRename = {
     needChangeNameDirUpper : [] ,
     needChangeNameDirLower : [] ,
     needChangeNameFileUpper : [] ,
-    needChangeNameFileLower : [] ,
-    needNpm : false
+    needChangeNameFileLower : []
   } ,
 
-  init : function ( dir , projectName , gitProjectName , needNpm ) {
-    this.config.searchUpper      = gitProjectName;
+  init : function ( name , projectType ) {
+    var dir                 = path.resolve( name );
+    var projectName         = path.basename( dir );
+    this.config.searchUpper = projectInfo[ projectType ].projectName;
+
     this.config.searchLower      = this.config.searchUpper.toLowerCase();
     this.config.baseRoot         = dir;
     this.config.projectName      = projectName;
     this.config.projectNameLower = projectName.toLowerCase();
-    this.config.needNpm          = needNpm;
 
-    this.config.bar = new ProgressBar( '开始执行安装程序 [:bar] :percent :elapseds' , {
-      complete : '=' ,
-      incomplete : ' ' ,
-      width : 40 ,
-      total : 100
+    this.gitClone( name , projectType );//git clone
+  } ,
+
+  gitClone : function ( name , projectType ) {
+    var self = this;
+    var root = path.resolve( name );
+
+    var kitPath = projectInfo[ projectType ].uri;
+    var needNpm = projectInfo[ projectType ].needNpm;
+
+    loading.start( '从git下载' );
+    exec( 'git clone ' + kitPath + ' ' + root , function ( e , stdout , stderr ) {
+      if ( e ) {
+        console.log( stdout );
+        console.error( stderr );
+        console.error( 'git clone 获取失败！' );
+        process.exit( 1 );
+      } else {
+        loading.stop();
+        if ( needNpm ) {
+          loading.start( '开始替换文件与内容' );
+          self.scanFileAndDirectory( path.resolve( name ) );
+          self.replaceContent();
+          self.renameFile();
+          self.renameFolder();
+          self.updatePackageJson();
+          loading.stop();
+
+          self.runNpmInstall();
+        } else {
+          self.delGit( root );
+        }
+      }
     } );
 
-    loading.start('开始替换文件与内容');
-    this.scanFileAndDirectory( dir );
-    this.replaceContent();
-    this.renameFile();
-    this.renameFolder();
-    loading.stop();
-
-    if ( this.config.needNpm ) {
-      this.updatePackageJson();
-      this.runNpmInstall();
-    }
   } ,
 
   scanFileAndDirectory : function ( dir ) {
@@ -62,10 +102,8 @@ var ProjectRename = {
       if ( !files.hasOwnProperty( index ) ) {
         continue;
       }
-      //this.addProgress( 0.002 );
       var filename = files[ index ];
-      filesForTest.push( filename );
-      var stat = fs.lstatSync( path.join( dir , filename ) );
+      var stat     = fs.lstatSync( path.join( dir , filename ) );
       if ( stat.isDirectory() ) {
         this.fileOrDirNeedChangeName( dir , filename , false );
         this.scanFileAndDirectory( path.join( dir , filename ) );
@@ -115,8 +153,6 @@ var ProjectRename = {
 
       fs.writeFileSync( this.config.fileContentReplaceArr[ i ] , newData );
     }
-
-    //this.config.bar.update( 0.9 );
   } ,
 
   renameFile : function () {
@@ -129,7 +165,6 @@ var ProjectRename = {
 
       fs.renameSync( this.config.needChangeNameFileUpper[ j ] , newData2 );
     }
-    //this.config.bar.update( 0.95 );
   } ,
 
   renameFolder : function () {
@@ -142,15 +177,11 @@ var ProjectRename = {
       var newData2 = this.config.needChangeNameDirUpper[ j ].replace( new RegExp( this.config.searchUpper , "gm" ) , this.config.projectName );
       fs.renameSync( this.config.needChangeNameDirUpper[ j ] , newData2 );
     }
-    if ( !this.config.needNpm ) {
-      //this.config.bar.update( 1 );
-    }
-
   } ,
   runNpmInstall : function () {
     var self = this;
     process.chdir( this.config.baseRoot );
-    loading.start('执行npm install,请耐心等待');
+    loading.start( '执行npm install,请耐心等待' );
     //console.log( '\n 执行npm install,请耐心等待.....' );
     exec( 'rm -rf .git && npm install ' , function ( e , stdout , stderr ) {
       if ( e ) {
@@ -198,12 +229,7 @@ var ProjectRename = {
       } ,
       license : paJson.license
     };
-    //console.log('打印packageJson:',packageJson);
     fs.writeFileSync( path.join( this.config.baseRoot , '/package.json' ) , JSON.stringify( packageJson ) );
-    if ( this.config.needNpm ) {
-      //this.config.bar.update( 1 );
-    }
-
   } ,
 
   test : function () {
@@ -221,9 +247,23 @@ var ProjectRename = {
       console.log( 'find' , this.config.searchLower );
     }
   } ,
-  addProgress : function ( step ) {
-    this.config.progress += step;
-    this.config.bar.tick( step );
+  delGit : function ( root ) {
+    var self = this;
+    exec( 'rm -rf ' + root + '/.git ' , function ( e , stdout , stderr ) {
+      if ( e ) {
+        console.log( stdout );
+        console.error( stderr );
+        console.error( 'git 文件夹删除失败!' );
+        process.exit( 1 );
+      } else {
+        loading.start( '开始替换文件与内容' );
+        self.scanFileAndDirectory( root );
+        self.replaceContent();
+        self.renameFile();
+        self.renameFolder();
+        loading.stop();
+      }
+    } );
   } ,
   tips : function () {
     console.log( '\n 在IOS上运行你的应用程序: ' );
@@ -239,4 +279,4 @@ var ProjectRename = {
   }
 };
 
-module.exports = ProjectRename;
+module.exports = Install;

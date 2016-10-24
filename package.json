@@ -10,7 +10,6 @@
 	},
 	"devDependencies": {},
 	"scripts": {
-		"postinstall":"node postInstall.js",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"repository": {

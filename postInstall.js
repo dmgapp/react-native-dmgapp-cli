@@ -1,6 +1,6 @@
+var exec = require( 'child_process' ).exec;
 
-
-function installPackage( ) {
+function installPackage() {
   exec( 'npm install' , function ( e , stdout , stderr ) {
     if ( e ) {
       console.log( stdout );

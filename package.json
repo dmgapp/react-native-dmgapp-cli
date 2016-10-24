@@ -6,11 +6,11 @@
 	"dependencies": {
 		"minimist": "^1.2.0",
 		"chalk": "^1.1.1",
-		"prompt": "^0.2.14",
-		"progress": "^1.1.8"
+		"prompt": "^0.2.14"
 	},
 	"devDependencies": {},
 	"scripts": {
+		"postinstall":"node postInstall.js",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"repository": {

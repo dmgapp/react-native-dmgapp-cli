@@ -5,7 +5,7 @@ var path        = require( "path" );
 var chalk       = require( 'chalk' );
 var exec        = require( 'child_process' ).exec;
 var ProgressBar = require( 'progress' );
-//var ProgressBar = require( "./progress.js" );
+var loading = require( "./loading" );
 
 var filesForTest = [];
 
@@ -28,7 +28,6 @@ var ProjectRename = {
   } ,
 
   init : function ( dir , projectName , gitProjectName , needNpm ) {
-    console.log('gitProjectName',gitProjectName);
     this.config.searchUpper      = gitProjectName;
     this.config.searchLower      = this.config.searchUpper.toLowerCase();
     this.config.baseRoot         = dir;
@@ -43,10 +42,12 @@ var ProjectRename = {
       total : 100
     } );
 
+    loading.start('开始替换文件与内容');
     this.scanFileAndDirectory( dir );
     this.replaceContent();
     this.renameFile();
     this.renameFolder();
+    loading.stop();
 
     if ( this.config.needNpm ) {
       this.updatePackageJson();
@@ -61,7 +62,7 @@ var ProjectRename = {
       if ( !files.hasOwnProperty( index ) ) {
         continue;
       }
-      this.addProgress( 0.002 );
+      //this.addProgress( 0.002 );
       var filename = files[ index ];
       filesForTest.push( filename );
       var stat = fs.lstatSync( path.join( dir , filename ) );
@@ -115,7 +116,7 @@ var ProjectRename = {
       fs.writeFileSync( this.config.fileContentReplaceArr[ i ] , newData );
     }
 
-    this.config.bar.update( 0.9 );
+    //this.config.bar.update( 0.9 );
   } ,
 
   renameFile : function () {
@@ -128,7 +129,7 @@ var ProjectRename = {
 
       fs.renameSync( this.config.needChangeNameFileUpper[ j ] , newData2 );
     }
-    this.config.bar.update( 0.95 );
+    //this.config.bar.update( 0.95 );
   } ,
 
   renameFolder : function () {
@@ -142,14 +143,15 @@ var ProjectRename = {
       fs.renameSync( this.config.needChangeNameDirUpper[ j ] , newData2 );
     }
     if ( !this.config.needNpm ) {
-      this.config.bar.update( 1 );
+      //this.config.bar.update( 1 );
     }
 
   } ,
   runNpmInstall : function () {
     var self = this;
     process.chdir( this.config.baseRoot );
-    console.log( '\n 执行npm install,请耐心等待.....' );
+    loading.start('执行npm install,请耐心等待');
+    //console.log( '\n 执行npm install,请耐心等待.....' );
     exec( 'rm -rf .git && npm install ' , function ( e , stdout , stderr ) {
       if ( e ) {
         console.log( stdout );
@@ -157,8 +159,9 @@ var ProjectRename = {
         console.error( 'npm执行失败!' );
         process.exit( 1 );
       } else {
+        loading.stop();
         console.log( chalk.yellow( stdout ) );
-        console.log( '\n npm执行成功!' );
+        //console.log( '\n npm执行成功!' );
         self.tips();
       }
     } );
@@ -198,7 +201,7 @@ var ProjectRename = {
     //console.log('打印packageJson:',packageJson);
     fs.writeFileSync( path.join( this.config.baseRoot , '/package.json' ) , JSON.stringify( packageJson ) );
     if ( this.config.needNpm ) {
-      this.config.bar.update( 1 );
+      //this.config.bar.update( 1 );
     }
 
   } ,

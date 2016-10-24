@@ -11,7 +11,8 @@ var path           = require( 'path' );
 var exec           = require( 'child_process' ).exec;
 var prompt         = require( 'prompt' );
 var help           = require( "./common/help.js" );
-var projectRename  = require( "./common/project_rename" );
+var loading           = require( "./common/loading" );
+var install  = require( "./common/install" );
 var argv           = require( 'minimist' )( process.argv.slice( 2 ) );
 var debug          = true;
 var kitPath        = 'https://github.com/dmgapp/react-native-dmgapp-kit.git ';
@@ -43,8 +44,9 @@ switch ( commands[ 0 ] ) {
         kitPath = '';
         needNpm = true;
       } else if ( argv[ 'news' ] ) {
-        kitPath = '';
-        needNpm = true;
+        needNpm        = true;
+        gitProjectName = 'DMGAppKit';
+        kitPath        = 'https://github.com/dmgapp/react-native-dmgapp-kit.git';
       } else if ( argv[ 'ios-oc' ] ) {
         kitPath        = 'https://git.coding.net/scot/TestProjectIos.git';
         gitProjectName = 'TestProjectIos';
@@ -60,7 +62,7 @@ switch ( commands[ 0 ] ) {
         needNpm        = true;
         gitProjectName = 'DMGAppKit';
         kitPath        = 'https://github.com/dmgapp/react-native-dmgapp-kit.git';//新闻的git
-        console.log( 'default news' );
+        //console.log( 'default news' );
       }
       init( commands[ 1 ] , needNpm );
     }
@@ -96,7 +98,7 @@ function init( name , needNpm ) {
     if ( debug ) {
       var root        = path.resolve( name );
       var projectName = path.basename( root );
-      projectRename.init( root , projectName , gitProjectName , needNpm );
+      install.init( root , projectName , gitProjectName , needNpm );
     } else {
       console.log( '项目名称已存在!' );
       process.exit();
@@ -156,7 +158,10 @@ function validatePackageName( name ) {
  * @param needNpm
  */
 function createProject( name , needNpm ) {
-  var root = path.resolve( name );
+  var root        = path.resolve( name );
+  var projectName = path.basename( root );
+
+  loading.start('从git下载');
   exec( 'git clone ' + kitPath + ' ' + root , function ( e , stdout , stderr ) {
     if ( e ) {
       console.log( stdout );
@@ -164,24 +169,21 @@ function createProject( name , needNpm ) {
       console.error( 'git clone 获取失败！' );
       process.exit( 1 );
     } else {
+      loading.stop();
       if ( needNpm ) {
-        installPackge( root , projectName );
+        install.init( root , projectName, gitProjectName ,needNpm );
       } else {
-        delGit( name , needNpm );
+        delGit( projectName , needNpm );
       }
-
     }
   } );
 }
 /**
  * 删除不是react-native项目的.git文件夹。否则会出错
- * @param name
+ * @param projectName
  * @param needNpm
  */
-function delGit( name , needNpm ) {
-  var root        = path.resolve( name );
-  var projectName = path.basename( root );
-
+function delGit( projectName , needNpm ) {
   exec( 'rm -rf ' + root + '/.git ' , function ( e , stdout , stderr ) {
     if ( e ) {
       console.log( stdout );
@@ -189,26 +191,7 @@ function delGit( name , needNpm ) {
       console.error( 'git 文件夹删除失败!' );
       process.exit( 1 );
     } else {
-      projectRename.init( root , projectName , gitProjectName ,needNpm );
-
-    }
-  } );
-}
-
-/**
- * 安装packge依赖包，并初始化项目
- * @param root 项目路径
- * @param projectName 项目名称
- */
-function installPackge( root , projectName ) {
-  exec( 'npm install' , function ( e , stdout , stderr ) {
-    if ( e ) {
-      console.log( stdout );
-      console.error( stderr );
-      console.error( 'npm 执行失败!' );
-      process.exit( 1 );
-    } else {
-      projectRename.init( root , projectName, gitProjectName ,needNpm );
+      install.init( root , projectName , gitProjectName ,needNpm );
     }
   } );
 }

@@ -1,12 +1,9 @@
 #!/usr/bin/env node
 
-var ProgressBar = require( 'progress' );
+var Loading = require( './common/loading' );
 
-var bar = new ProgressBar( '  [:bar] :percent :elapseds' , 10 );
+Loading.start( '从git下载' );
 
-var id = setInterval( function () {
-  bar.tick();
-  if ( bar.complete ) {
-    clearInterval( id );
-  }
-} , 100 );
+setTimeout( function () {
+  Loading.stop();
+} , 5000 );

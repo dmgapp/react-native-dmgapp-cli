@@ -17,7 +17,7 @@ var ProjectRename = {
     baseRoot : '' ,
     projectName : '' ,
     projectNameLower : '' ,
-    searchUpper : "TestProjectIos" ,
+    searchUpper : "" ,
     searchLower : "" ,
     fileContentReplaceArr : [] ,
     needChangeNameDirUpper : [] ,
@@ -27,7 +27,9 @@ var ProjectRename = {
     needNpm : false
   } ,
 
-  init : function ( dir , projectName , gitProjectName,needNpm ) {
+  init : function ( dir , projectName , gitProjectName , needNpm ) {
+    console.log('gitProjectName',gitProjectName);
+    this.config.searchUpper      = gitProjectName;
     this.config.searchLower      = this.config.searchUpper.toLowerCase();
     this.config.baseRoot         = dir;
     this.config.projectName      = projectName;
@@ -139,7 +141,7 @@ var ProjectRename = {
       var newData2 = this.config.needChangeNameDirUpper[ j ].replace( new RegExp( this.config.searchUpper , "gm" ) , this.config.projectName );
       fs.renameSync( this.config.needChangeNameDirUpper[ j ] , newData2 );
     }
-    if ( !this.config.needNpm ){
+    if ( !this.config.needNpm ) {
       this.config.bar.update( 1 );
     }
 
@@ -195,7 +197,7 @@ var ProjectRename = {
     };
     //console.log('打印packageJson:',packageJson);
     fs.writeFileSync( path.join( this.config.baseRoot , '/package.json' ) , JSON.stringify( packageJson ) );
-    if(this.config.needNpm){
+    if ( this.config.needNpm ) {
       this.config.bar.update( 1 );
     }
 

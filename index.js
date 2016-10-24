@@ -53,8 +53,9 @@ switch ( commands[ 0 ] ) {
         kitPath = '';
         needNpm = false;
       } else if ( argv[ 'android' ] ) {
-        kitPath = '';
-        needNpm = false;
+        gitProjectName = 'TestProjectAndroid';
+        kitPath        = 'https://git.coding.net/scot/TestProjectAndroid.git';
+        needNpm        = false;
       } else {
         needNpm        = true;
         gitProjectName = 'DMGAppKit';
@@ -95,13 +96,13 @@ function init( name , needNpm ) {
     if ( debug ) {
       var root        = path.resolve( name );
       var projectName = path.basename( root );
-      projectRename.init( root , projectName , needNpm );
+      projectRename.init( root , projectName , gitProjectName , needNpm );
     } else {
       console.log( '项目名称已存在!' );
       process.exit();
     }
-      //console.log( '项目名称已存在!' );
-      //process.exit();
+    //console.log( '项目名称已存在!' );
+    //process.exit();
   } else {
     createProject( name , needNpm );
   }
@@ -163,10 +164,10 @@ function createProject( name , needNpm ) {
       console.error( 'git clone 获取失败！' );
       process.exit( 1 );
     } else {
-      if(needNpm){
+      if ( needNpm ) {
         installPackge( root , projectName );
-      }else{
-        delGit(name,needNpm);
+      } else {
+        delGit( name , needNpm );
       }
 
     }
@@ -188,7 +189,7 @@ function delGit( name , needNpm ) {
       console.error( 'git 文件夹删除失败!' );
       process.exit( 1 );
     } else {
-        projectRename.init( root , projectName,needNpm );
+      projectRename.init( root , projectName , gitProjectName ,needNpm );
 
     }
   } );
@@ -207,7 +208,7 @@ function installPackge( root , projectName ) {
       console.error( 'npm 执行失败!' );
       process.exit( 1 );
     } else {
-      projectRename.init( root , projectName );
+      projectRename.init( root , projectName, gitProjectName ,needNpm );
     }
   } );
 }

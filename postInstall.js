@@ -8,7 +8,7 @@ function installPackage() {
       console.error( 'npm 执行失败!' );
       process.exit( 1 );
     } else {
-      console.log( 0 );
+      return 0;
     }
   } );
 }

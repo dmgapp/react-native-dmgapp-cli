@@ -67,7 +67,7 @@ switch ( commands[ 0 ] ) {
       );
       process.exit( 1 );
     } else {
-      //init( commands[ 1 ] );
+      //待完善;
     }
     break;
   default:
@@ -84,48 +84,13 @@ switch ( commands[ 0 ] ) {
 function init( name,projectType ) {
   validatePackageName( name );
   if ( fs.existsSync( name ) ) {
-    //if ( debug ) {
-    //  var root        = path.resolve( name );
-    //  var projectName = path.basename( root );
-    //  install.init( root , projectName , gitProjectName , needNpm );
-    //} else {
-    //  console.log( '项目名称已存在!' );
-    //  process.exit();
-    //}
     console.log( '项目名称已存在!' );
     process.exit();
   } else {
-    createProject( name , projectType);
+    install.init(name , projectType );
   }
 }
 
-/**
- * 创建项目或者工程
- * @param name
- * @param projectType
- */
-function createProject( name , projectType ) {
-  install.init(name , projectType );
-}
-function createAfterConfirmation( name ) {
-  prompt.start();
-  var property = {
-    name : 'yesno' ,
-    message : '目录 ' + name + ' 已经存在. 是否继续?' ,
-    validator : /y[es]*|n[o]?/ ,
-    warning : '必须回答 yes or no' ,
-    default : 'no'
-  };
-
-  prompt.get( property , function ( err , result ) {
-    if ( result.yesno[ 0 ] === 'y' ) {
-      createProject( name );
-    } else {
-      console.log( '取消项目初始化!' );
-      process.exit();
-    }
-  } );
-}
 /**
  * 检查项目名是否有效
  * @param name

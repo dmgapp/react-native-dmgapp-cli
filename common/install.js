@@ -4,7 +4,7 @@
  * 项目下载，替换及后续处理
  *
  *
- * @author Zix , Scott
+ * @author DMG ( Zix , Scott )
  * @version 1.0.0 , 2016-10-26
  */
 

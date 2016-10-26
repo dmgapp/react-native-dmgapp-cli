@@ -8,7 +8,7 @@
  * dmgapp -h 或 dmgapp --help
  * dmgapp init ProjectName
  *
- * @author Zix , Scott
+ * @author DMG ( Zix , Scott )
  * @version 1.0.0 , 2016-10-26
  */
 

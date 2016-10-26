@@ -10,7 +10,7 @@
  * loading.end();
  *   开始下载...完成
  *
- * @author Zix
+ * @author DMG ( Zix )
  * @version 1.0.0 , 2016-10-21
  */
 

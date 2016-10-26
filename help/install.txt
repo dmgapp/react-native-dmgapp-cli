@@ -1,0 +1,4 @@
+   dmgapp install [--组件编号]
+   [--组件编号] [1]dmgapp-share [2]dmgapp-comment [3]dmgapp-favorite
+   以下举例说明:
+   dmgapp install --1 --2

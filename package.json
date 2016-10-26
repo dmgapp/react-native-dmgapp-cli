@@ -4,8 +4,9 @@
 	"description": "dmgapp build tools command line",
 	"main": "index.js",
 	"dependencies": {
-		"minimist": "^1.2.0",
 		"chalk": "^1.1.1",
+		"minimist": "^1.2.0",
+		"promise": "^7.1.1",
 		"prompt": "^0.2.14"
 	},
 	"devDependencies": {},

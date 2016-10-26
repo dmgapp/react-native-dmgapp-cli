@@ -1,0 +1,18 @@
+
+-----------------------------------------------
+
+          创建{projectName}项目成功
+
+-----------------------------------------------
+
+运行iOS应用程序:
+cd {projectName}
+react-native run-ios
+- 或者 -
+在 Xcode 中 打开{basePath}/ios/{projectName}.xcodeproj
+点击运行按钮
+
+运行Android应用程序:
+运行一个安卓模拟器, 或连接一个设备
+cd {projectName}
+react-native run-android

@@ -1,282 +1,299 @@
 'use strict';
 
-var fs      = require( "fs" );
-var path    = require( "path" );
-var chalk   = require( 'chalk' );
-var exec    = require( 'child_process' ).exec;
-var loading = require( "./loading" );
+/**
+ * 项目下载，替换及后续处理
+ *
+ *
+ * @author Zix , Scott
+ * @version 1.0.0 , 2016-10-26
+ */
+
+var path     = require( "path" );
+var chalk    = require( 'chalk' );
+var loading  = require( "./loading" );
+var fs       = require( 'fs' );
+var exec     = require( 'child_process' ).exec;
+var Promise  = require( 'promise' );
+var exeCli   = Promise.denodeify( exec );
+var readFile = Promise.denodeify( fs.readFile );
 
 var projectInfo = {
-  'rn-mall' : {
-    'projectName' : '' ,
-    'needNpm' : true ,
-    'uri' : ''
-  } ,
   'rn-news' : {
-    'projectName' : 'DMGAppKit' ,
-    'needNpm' : true ,
-    'uri' : 'https://github.com/dmgapp/react-native-dmgapp-kit.git'
+    'name' : 'RNDMGAppNewsKit' ,
+    'uri' : 'https://git.coding.net/zix/react-native-dmgapp-news-kit.git' ,
+    'preInstall' : null ,
+    'postInstall' : function () {
+      updateRNPackageJson();
+      return exeCli( 'cd ' + config.projectName + ' && npm install && react-native link' );
+    }
   } ,
-  'ios-oc' : {
-    'projectName' : 'TestProjectIos' ,
-    'needNpm' : false ,
-    'uri' : 'https://git.coding.net/scot/TestProjectIos.git'
+  'rn-mall' : {
+    'name' : 'RNDMGAppMallKit' ,
+    'uri' : 'https://git.coding.net/zix/react-native-dmgapp-mall-kit.git' ,
+    'preInstall' : null ,
+    'postInstall' : function () {
+      updateRNPackageJson();
+      return exeCli( 'cd ' + config.projectName + ' && npm install && react-native link' );
+    }
   } ,
-  'ios-swift' : {
-    'projectName' : '' ,
-    'needNpm' : false ,
-    'uri' : ''
+  'ios-oc-news' : {
+    'name' : 'OCDMGAppNewsKit' ,
+    'uri' : 'https://git.coding.net/wuway/oc-dmgapp-news-kit.git' ,
+    'preInstall' : null ,
+    'postInstall' : null
   } ,
-  'android' : {
-    'projectName' : 'TestProjectAndroid' ,
-    'needNpm' : false ,
-    'uri' : 'https://git.coding.net/scot/TestProjectAndroid.git'
+  'ios-oc-mall' : {
+    'name' : 'OCDMGAppMallKit' ,
+    'uri' : 'https://git.coding.net/wuway/oc-dmgapp-mall-kit.git' ,
+    'preInstall' : null ,
+    'postInstall' : null
+  } ,
+  'ios-swift-news' : {
+    'name' : 'DMGAppSwiftKit' ,
+    'uri' : '' ,
+    'preInstall' : null ,
+    'postInstall' : null
+  } ,
+  'ios-swift-mall' : {
+    'name' : 'DMGAppSwiftKit' ,
+    'uri' : '' ,
+    'preInstall' : null ,
+    'postInstall' : null
+  } ,
+  'android-news' : {
+    'name' : 'DMGAppAndroidKit' ,
+    'uri' : 'https://git.coding.net/scot/TestProjectAndroid.git' ,
+    'preInstall' : null ,
+    'postInstall' : null
+  } ,
+  'android-mall' : {
+    'name' : 'DMGAppAndroidKit' ,
+    'uri' : 'https://git.coding.net/scot/TestProjectAndroid.git' ,
+    'preInstall' : null ,
+    'postInstall' : null
+  } ,
+  'web' : {
+    'name' : 'DMGSmartKit' ,
+    'uri' : 'https://git.coding.net/zix/php-smart2-kit.git' ,
+    'preInstall' : null ,
+    'postInstall' : function () {
+      updateRNPackageJson();
+      var cli = 'cd ' + config.projectName + ' && ' +
+                'chmod 0777 runtime/ -R && ' +
+                'chmod 0777 public/logs -R &&' +
+                'chmod 0777 public/upload -R &&' +
+                'cd public && ' +
+                'npm install';
+      return exeCli( cli );
+    }
   }
 };
 
-var Install = {
-  config : {
-    baseRoot : '' ,
-    projectName : '' ,
-    projectNameLower : '' ,
-    searchUpper : "" ,
-    searchLower : "" ,
-    fileContentReplaceArr : [] ,
-    needChangeNameDirUpper : [] ,
-    needChangeNameDirLower : [] ,
-    needChangeNameFileUpper : [] ,
-    needChangeNameFileLower : []
-  } ,
-
-  init : function ( name , projectType ) {
-    var dir                 = path.resolve( name );
-    var projectName         = path.basename( dir );
-    this.config.searchUpper = projectInfo[ projectType ].projectName;
-
-    this.config.searchLower      = this.config.searchUpper.toLowerCase();
-    this.config.baseRoot         = dir;
-    this.config.projectName      = projectName;
-    this.config.projectNameLower = projectName.toLowerCase();
-
-    this.gitClone( name , projectType );//git clone
-  } ,
-
-  gitClone : function ( name , projectType ) {
-    var self = this;
-    var root = path.resolve( name );
-
-    var kitPath = projectInfo[ projectType ].uri;
-    var needNpm = projectInfo[ projectType ].needNpm;
-
-    loading.start( '从git下载' );
-    exec( 'git clone ' + kitPath + ' ' + root , function ( e , stdout , stderr ) {
-      if ( e ) {
-        console.log( stdout );
-        console.error( stderr );
-        console.error( 'git clone 获取失败！' );
-        process.exit( 1 );
-      } else {
-        loading.stop();
-        if ( needNpm ) {
-          loading.start( '开始替换文件与内容' );
-          self.scanFileAndDirectory( path.resolve( name ) );
-          self.replaceContent();
-          self.renameFile();
-          self.renameFolder();
-          self.updatePackageJson();
-          loading.stop();
-
-          self.runNpmInstall();
-        } else {
-          self.delGit( root );
-        }
-      }
-    } );
-
-  } ,
-
-  scanFileAndDirectory : function ( dir ) {
-    //读取文件目录
-    var files = fs.readdirSync( dir );
-    for ( var index in files ) {
-      if ( !files.hasOwnProperty( index ) ) {
-        continue;
-      }
-      var filename = files[ index ];
-      var stat     = fs.lstatSync( path.join( dir , filename ) );
-      if ( stat.isDirectory() ) {
-        this.fileOrDirNeedChangeName( dir , filename , false );
-        this.scanFileAndDirectory( path.join( dir , filename ) );
-      } else {
-        //判断 filename 是否是要替换的 文件或目录
-        //如果是 则添加到要改名的 文件 arr
-        this.fileOrDirNeedChangeName( dir , filename , true );
-        //检查文件内容是否需要替换
-        var filePath       = path.join( dir , filename );
-        var fileContent    = fs.readFileSync( filePath , "utf-8" );
-        var patternContent = new RegExp( this.config.searchLower + '|' + this.config.searchUpper );
-
-        //保存文件内容数组
-        if ( patternContent.test( fileContent ) ) {
-          this.config.fileContentReplaceArr.push( filePath );
-        }
-      }
-    }
-  } ,
-
-  fileOrDirNeedChangeName : function ( dir , fileOrDir , isFile ) {
-    var pattern1 = new RegExp( this.config.searchUpper );
-
-    if ( pattern1.test( fileOrDir ) ) {
-      if ( isFile ) {
-        this.config.needChangeNameFileUpper.push( path.join( dir , fileOrDir ) );
-      } else {
-        this.config.needChangeNameDirUpper.push( path.join( dir , fileOrDir ) );
-      }
-    }
-
-    var pattern2 = new RegExp( this.config.searchLower );
-    if ( pattern2.test( fileOrDir ) ) {
-      if ( isFile ) {
-        this.config.needChangeNameFileLower.push( path.join( dir , fileOrDir ) );
-      } else {
-        this.config.needChangeNameDirLower.push( path.join( dir , fileOrDir ) );
-      }
-    }
-  } ,
-
-  replaceContent : function () {
-    for ( var i = 0 ; i < this.config.fileContentReplaceArr.length ; i++ ) {
-      var data    = fs.readFileSync( this.config.fileContentReplaceArr[ i ] , "utf-8" );
-      var newData = data.replace( new RegExp( this.config.searchUpper , "gm" ) , this.config.projectName )
-                        .replace( new RegExp( this.config.searchLower , "gm" ) , this.config.projectNameLower );
-
-      fs.writeFileSync( this.config.fileContentReplaceArr[ i ] , newData );
-    }
-  } ,
-
-  renameFile : function () {
-    for ( var j = 0 ; j < this.config.needChangeNameFileUpper.length ; j++ ) {
-      //var newData2 = this.config.needChangeNameFileUpper[ j ].replace( this.config.searchUpper , projectName );
-
-      var filePath = this.config.needChangeNameFileUpper[ j ];
-      var newData2 = filePath.substr( 0 , filePath.lastIndexOf( this.config.searchUpper ) ) + this.config.projectName +
-                     filePath.substr( filePath.lastIndexOf( this.config.searchUpper ) + this.config.searchUpper.length );
-
-      fs.renameSync( this.config.needChangeNameFileUpper[ j ] , newData2 );
-    }
-  } ,
-
-  renameFolder : function () {
-    for ( var i = this.config.needChangeNameDirLower.length - 1 ; i >= 0 ; i-- ) {
-      var newData = this.config.needChangeNameDirLower[ i ].replace( new RegExp( this.config.searchLower , "gm" ) , this.config.projectNameLower );
-      fs.renameSync( this.config.needChangeNameDirLower[ i ] , newData );
-    }
-
-    for ( var j = this.config.needChangeNameDirUpper.length - 1 ; j >= 0 ; j-- ) {
-      var newData2 = this.config.needChangeNameDirUpper[ j ].replace( new RegExp( this.config.searchUpper , "gm" ) , this.config.projectName );
-      fs.renameSync( this.config.needChangeNameDirUpper[ j ] , newData2 );
-    }
-  } ,
-  runNpmInstall : function () {
-    var self = this;
-    process.chdir( this.config.baseRoot );
-    loading.start( '执行npm install,请耐心等待' );
-    //console.log( '\n 执行npm install,请耐心等待.....' );
-    exec( 'rm -rf .git && npm install ' , function ( e , stdout , stderr ) {
-      if ( e ) {
-        console.log( stdout );
-        console.error( stderr );
-        console.error( 'npm执行失败!' );
-        process.exit( 1 );
-      } else {
-        loading.stop();
-        console.log( chalk.yellow( stdout ) );
-        //console.log( '\n npm执行成功!' );
-        self.tips();
-      }
-    } );
-  } ,
-  updatePackageJson : function () {
-    var paJson      = require( this.config.baseRoot + '/package.json' );
-    var packageJson = {
-      name : paJson.name ,
-      version : paJson.version ,
-      scripts : {
-        start : paJson.scripts[ 'start' ] ,
-        test : paJson.scripts[ 'test' ]
-      } ,
-      dependencies : {
-        react : paJson.dependencies[ 'react' ] ,
-        'react-native' : paJson.dependencies[ 'react-native' ] ,
-        'react-native-router-flux' : paJson.dependencies[ 'react-native-router-flux' ] ,
-        'react-native-swiper' : paJson.dependencies[ 'react-native-swiper' ] ,
-        'react-native-vector-icons' : paJson.dependencies[ 'react-native-vector-icons' ] ,
-        'react-redux' : paJson.dependencies[ 'react-redux' ] ,
-        redux : paJson.dependencies[ 'redux' ] ,
-        'redux-persist' : paJson.dependencies[ 'redux-persist' ] ,
-        'redux-thunk' : paJson.dependencies[ 'redux-thunk' ]
-      } ,
-      jest : {
-        preset : paJson.jest[ 'preset' ]
-      } ,
-      devDependencies : {
-        'babel-jest' : paJson.devDependencies[ 'babel-jest' ] ,
-        'babel-preset-react-native' : paJson.devDependencies[ 'babel-preset-react-native' ] ,
-        jest : paJson.devDependencies[ 'jest' ] ,
-        'jest-react-native' : paJson.devDependencies[ 'jest-react-native' ] ,
-        'react-test-renderer' : paJson.devDependencies[ 'react-test-renderer' ]
-      } ,
-      license : paJson.license
-    };
-    fs.writeFileSync( path.join( this.config.baseRoot , '/package.json' ) , JSON.stringify( packageJson ) );
-  } ,
-
-  test : function () {
-    var filename = this.config.baseRoot + '/package.json';
-    var content  = fs.readFileSync( filename , 'utf-8' );
-    var p1       = new RegExp( this.config.searchUpper , 'gm' );
-    var p2       = new RegExp( this.config.searchLower , "gm" );
-
-    console.log( content , this.config.searchUpper , this.config.searchLower );
-    if ( p1.test( content ) ) {
-      console.log( 'find' , this.config.searchUpper );
-    }
-
-    if ( p2.test( content ) ) {
-      console.log( 'find' , this.config.searchLower );
-    }
-  } ,
-  delGit : function ( root ) {
-    var self = this;
-    exec( 'rm -rf ' + root + '/.git ' , function ( e , stdout , stderr ) {
-      if ( e ) {
-        console.log( stdout );
-        console.error( stderr );
-        console.error( 'git 文件夹删除失败!' );
-        process.exit( 1 );
-      } else {
-        loading.start( '开始替换文件与内容' );
-        self.scanFileAndDirectory( root );
-        self.replaceContent();
-        self.renameFile();
-        self.renameFolder();
-        loading.stop();
-      }
-    } );
-  } ,
-  tips : function () {
-    console.log( '\n 在IOS上运行你的应用程序: ' );
-    console.log( '  cd ' + this.config.baseRoot );
-    console.log( '  react-native run-ios' );
-    console.log( '  - or -' );
-    console.log( '  Open ' + this.config.baseRoot + '/ios/' + this.config.projectName + '.xcodeproj in Xcode' );
-    console.log( '  点击运行按钮' );
-    console.log( '在安卓上运行你的应用程序:' );
-    console.log( '  有一个安卓模拟器运行（最快的方式开始），或一个设备连接' );
-    console.log( '  cd ' + this.config.baseRoot );
-    console.log( '  react-native run-android' );
-  }
+var config = {
+  basePath : '' ,
+  projectType : '' ,
+  projectPath : '' ,
+  projectName : '' ,
+  projectNameLower : '' ,
+  searchUpper : '' ,
+  searchLower : '' ,
+  replaceFiles : [] ,
+  renameDirUpper : [] ,
+  renameDirLower : [] ,
+  renameFileUpper : [] ,
+  renameFileLower : [] ,
+  gitCloneCli : 'git clone {kitUri} {projectPath} && cd {projectPath} && rm -rf .git/'
 };
 
-module.exports = Install;
+//克隆项目
+function start( projectName , projectType ) {
+
+  var projectKit = projectInfo[ projectType ];
+  var kitUri     = projectKit.uri;
+
+  config.basePath         = process.cwd();
+  config.projectType      = projectType;
+  config.projectPath      = path.resolve( projectName );
+  config.projectName      = projectName;
+  config.projectNameLower = projectName.toLowerCase();
+  config.searchUpper      = projectKit.name;
+  config.searchLower      = config.searchUpper.toLowerCase();
+  config.gitCloneCli      = config.gitCloneCli
+                                  .replace( /\{kitUri}/g , kitUri )
+                                  .replace( /\{projectPath}/g , config.projectPath );
+
+  console.log( '项目将安装在 ' + config.projectPath );
+  loading.start( '开始从Git下载' );
+  exeCli( config.gitCloneCli )
+    .then( function () {
+      loading.stop();
+      //扫描目录
+      loading.start( '开始安装' );
+      return scanFiles( config.projectPath );
+    } )
+    .then( function () {
+      //替换文件内容
+      replaceContent();
+    } )
+    .then( function () {
+      //文件更名
+      renameFiles();
+    } )
+    .then( function () {
+      //目录更名
+      renameFolders();
+    } )
+    .then( function () {
+      loading.stop();
+
+      if ( projectKit.postInstall ) {
+        //安装后的操作
+        loading.start( '执行安装后的操作' );
+        return projectKit.postInstall();
+      }
+    } )
+    .then( function () {
+      loading.stop();
+      return getTips();
+    } )
+    .then( function ( tipsContent ) {
+      console.log( tipsContent.replace( /\{basePath}/g , config.basePath )
+                              .replace( /\{projectName}/g , config.projectName ) );
+    } )
+    .catch( function ( e ) {
+      console.log( e );
+    } );
+}
+
+//扫描目录和文件
+function scanFiles( baseDir ) {
+  //读取文件目录
+  var files = fs.readdirSync( baseDir );
+  for ( var index in files ) {
+    if ( !files.hasOwnProperty( index ) ) {
+      continue;
+    }
+    var filename = files[ index ];
+    var fileType = fs.lstatSync( path.join( baseDir , filename ) );
+    if ( fileType.isDirectory() ) {
+      //检查目录名是否要替换
+      needRenameDir( baseDir , filename );
+      //继续扫描下级目录
+      scanFiles( path.join( baseDir , filename ) );
+    } else {
+      //检查文件名是否需要替换
+      needRenameFile( baseDir , filename );
+      //检查文件内容是否需要替换
+      needReplaceFile( baseDir , filename );
+    }
+  }
+}
+
+//判断是否要修改目录名称
+function needRenameDir( baseDir , dirName ) {
+  var patternUpper = new RegExp( config.searchUpper );
+  var patternLower = new RegExp( config.searchLower );
+
+  if ( patternUpper.test( dirName ) ) {
+    config.renameDirUpper.push( path.join( baseDir , dirName ) );
+  }
+
+  if ( patternLower.test( dirName ) ) {
+    config.renameDirLower.push( path.join( baseDir , dirName ) );
+  }
+}
+
+//判断是否要修改文件名
+function needRenameFile( baseDir , filename ) {
+  var patternUpper = new RegExp( config.searchUpper );
+  var patternLower = new RegExp( config.searchLower );
+
+  if ( patternUpper.test( filename ) ) {
+    config.renameFileUpper.push( path.join( baseDir , filename ) );
+  }
+
+  if ( patternLower.test( filename ) ) {
+    config.renameFileLower.push( path.join( baseDir , filename ) );
+  }
+}
+
+//查找是否文件内容需要替换
+function needReplaceFile( baseDir , filename ) {
+  var filePath    = path.join( baseDir , filename );
+  var fileContent = fs.readFileSync( filePath , "utf-8" );
+  var pattern     = new RegExp( config.searchLower + '|' + config.searchUpper );
+
+  //保存文件内容数组
+  if ( pattern.test( fileContent ) ) {
+    config.replaceFiles.push( filePath );
+  }
+}
+
+//替换文件内容
+function replaceContent() {
+  var patternUpper = new RegExp( config.searchUpper , "gm" );
+  var patternLower = new RegExp( config.searchLower , "gm" );
+
+  for ( var i = 0 ; i < config.replaceFiles.length ; i++ ) {
+    var filePath = config.replaceFiles[ i ];
+    var data     = fs.readFileSync( filePath , "utf-8" );
+    var newData  = data.replace( patternUpper , config.projectName )
+                       .replace( patternLower , config.projectNameLower );
+
+    fs.writeFileSync( filePath , newData );
+  }
+}
+
+//文件更名
+function renameFiles() {
+  //处理需要替换大写文件名的文件
+  for ( var i = 0 ; i < config.renameFileUpper.length ; i++ ) {
+    var upperFile    = config.renameFileUpper[ i ];
+    var newUpperFile = upperFile.substr( 0 , upperFile.lastIndexOf( config.searchUpper ) ) + config.projectName +
+                       upperFile.substr( upperFile.lastIndexOf( config.searchUpper ) + config.searchUpper.length );
+
+    fs.renameSync( upperFile , newUpperFile );
+  }
+  //处理需要替换小写文件名的文件
+  for ( var j = 0 ; j < config.renameFileLower.length ; j++ ) {
+    var lowerFile    = config.renameFileLower[ j ];
+    var newLowerFile = lowerFile.substr( 0 , lowerFile.lastIndexOf( config.searchLower ) ) + config.projectName +
+                       lowerFile.substr( lowerFile.lastIndexOf( config.searchLower ) + config.searchLower.length );
+
+    fs.renameSync( lowerFile , newLowerFile );
+  }
+}
+
+//修改目录名
+function renameFolders() {
+  var patternUpper = new RegExp( config.searchUpper , "gm" );
+  var patternLower = new RegExp( config.searchLower , "gm" );
+
+  for ( var i = config.renameDirUpper.length - 1 ; i >= 0 ; i-- ) {
+    var upperDirName = config.renameDirUpper[ i ];
+    var newUpperName = upperDirName.replace( patternUpper , config.projectName );
+    fs.renameSync( upperDirName , newUpperName );
+  }
+
+  for ( var j = config.renameDirLower.length - 1 ; j >= 0 ; j-- ) {
+    var lowerDirName = config.renameDirLower[ j ];
+    var newLowerName = lowerDirName.replace( patternLower , config.projectNameLower );
+    fs.renameSync( lowerDirName , newLowerName );
+  }
+}
+
+//更新rn项目的 package.json文件
+function updateRNPackageJson() {
+  var paJson     = require( config.projectPath + '/package.json' );
+  paJson.version = '1.0.0';
+
+  fs.writeFileSync( path.join( config.projectPath , '/package.json' ) , JSON.stringify( paJson , null , 2 ) );
+}
+
+//取帮助文件
+function getTips() {
+  var tipsPath = path.resolve( __dirname , 'tips' , config.projectType + '.txt' );
+  return readFile( tipsPath , 'utf-8' );
+}
+
+module.exports = start;

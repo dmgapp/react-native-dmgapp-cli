@@ -1,5 +1,20 @@
 'use strict';
 
+/**
+ * dmgapp 命令行 loading
+ *
+ * 使用：
+ * loading.start('开始下载');
+ *   开始下载...
+ *
+ * loading.end();
+ *   开始下载...完成
+ *
+ * @author Zix
+ * @version 1.0.0 , 2016-10-21
+ */
+
+
 var Loading = {
   animate : [ '/' , '-' , '\\' , '|' ] ,
   currentIndex : 0 ,
@@ -33,7 +48,7 @@ var Loading = {
   } ,
 
   stop : function () {
-    var self    = this;
+    var self = this;
     if ( this.handle ) {
       clearInterval( this.handle );
     }
@@ -41,7 +56,7 @@ var Loading = {
     //self.stream.write( self.preString + '...完成' );
     self.stream.clearLine();
     self.stream.cursorTo( 0 );
-    console.log(self.preString + '...完成');
+    console.log( self.preString + '...完成' );
   }
 };
 

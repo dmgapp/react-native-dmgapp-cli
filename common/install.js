@@ -73,8 +73,8 @@ var projectInfo = {
     'postInstall' : null
   } ,
   'web' : {
-    'name' : 'DMGSmartKit' ,
-    'uri' : 'https://git.coding.net/zix/php-smart2-kit.git' ,
+    'name' : 'DMGApp' ,
+    'uri' : 'https://git.coding.net/Dark-Matter-Group/php-smart2.git' ,
     'preInstall' : null ,
     'postInstall' : function () {
       updateRNPackageJson();

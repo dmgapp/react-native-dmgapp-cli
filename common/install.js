@@ -77,11 +77,10 @@ var projectInfo = {
     'uri' : 'https://git.coding.net/Dark-Matter-Group/php-smart2.git' ,
     'preInstall' : null ,
     'postInstall' : function () {
-      updateRNPackageJson();
       var cli = 'cd ' + config.projectName + ' && ' +
-                'chmod 0777 runtime/ -R && ' +
-                'chmod 0777 public/logs -R &&' +
-                'chmod 0777 public/upload -R &&' +
+                'chmod -R 0777 runtime/ && ' +
+                'chmod -R 0777 public/logs && ' +
+                'chmod -R 0777 public/upload && ' +
                 'cd public && ' +
                 'npm install';
       return exeCli( cli );
@@ -108,6 +107,7 @@ var config = {
 //克隆项目
 function start( projectName , projectType ) {
 
+  //console.log( projectType );
   var projectKit = projectInfo[ projectType ];
   var kitUri     = projectKit.uri;
 

@@ -68,18 +68,20 @@ function commandInit() {
   } else {
     var projectType = '';
 
-    if ( argv[ 'ios' ] ) {
-      projectType = 'ios-oc';
-    } else if ( argv[ 'ios-swift' ] ) {
-      projectType = 'ios-swift';
-    } else if ( argv[ 'android' ] ) {
-      projectType = 'android';
-    } else if ( argv[ 'web' ] ) {
+    if ( argv[ 'web' ] ) {
       projectType = 'web';
     } else {
-      projectType = 'rn';
+      if ( argv[ 'ios' ] ) {
+        projectType = 'ios-oc';
+      } else if ( argv[ 'ios-swift' ] ) {
+        projectType = 'ios-swift';
+      } else if ( argv[ 'android' ] ) {
+        projectType = 'android';
+      } else {
+        projectType = 'rn';
+      }
+      projectType += argv[ 'mall' ] ? '-mall' : '-news';
     }
-    projectType += argv[ 'mall' ] ? '-mall' : '-news';
 
     //检查项目名称 并开始安装
     if ( validateProjectName() ) {

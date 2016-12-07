@@ -53,18 +53,22 @@ function start() {
   }
 }
 
+function errorCil() {
+  console.error(
+    '用法：dmgapp init 项目名称 [--模板类型] [--平台语言]' +
+    '\n 模板类型 [--mall]或[--news]' +
+    '\n 原生平台语言 [--ios-oc][--ios-swift][--android]' +
+    '\n 默认 React Native'
+  );
+  process.exit( 1 );
+}
+
 /**
  * 处理 init 命令
  */
 function commandInit() {
   if ( projectName == '' ) {
-    console.error(
-      '用法：dmgapp init 项目名称 [--模板类型] [--平台语言]' +
-      '\n 模板类型 [--mall]或[--news]' +
-      '\n 原生平台语言 [--ios-oc][--ios-swift][--android]' +
-      '\n 默认 React Native'
-    );
-    process.exit( 1 );
+    errorCil();
   } else {
     var projectType = '';
 
@@ -77,10 +81,17 @@ function commandInit() {
         projectType = 'ios-swift';
       } else if ( argv[ 'android' ] ) {
         projectType = 'android';
-      } else {
-        projectType = 'rn';
+      } else if ( argv[ 'start' ] ) {
+        projectType = 'rn-start';
+      } else if ( argv[ 'mall' ] ) {
+        projectType = 'rn-mall';
+      } else if ( argv[ 'news' ] ) {
+        projectType = 'rn-news';
       }
-      projectType += argv[ 'mall' ] ? '-mall' : '-news';
+
+      if ( projectType == '' ) {
+        errorCil();
+      }
     }
 
     //检查项目名称 并开始安装

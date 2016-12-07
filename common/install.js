@@ -18,6 +18,15 @@ var exeCli   = Promise.denodeify( exec );
 var readFile = Promise.denodeify( fs.readFile );
 
 var projectInfo = {
+  'rn-start' : {
+    'name' : 'RNDMGAppStartKit' ,
+    'uri' : 'https://git.coding.net/zix/react-native-dmgapp-start-kit.git' ,
+    'preInstall' : null ,
+    'postInstall' : function () {
+      updateRNPackageJson();
+      return exeCli( 'cd ' + config.projectName + ' && npm install && react-native link' );
+    }
+  } ,
   'rn-news' : {
     'name' : 'RNDMGAppNewsKit' ,
     'uri' : 'https://git.coding.net/zix/react-native-dmgapp-news-kit.git' ,
